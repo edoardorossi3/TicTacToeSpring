@@ -2,21 +2,30 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import axios from "axios";
 
-const move = async (i: number, j: number) => {
-    await axios.post('http://localhost:8080/createamove', {i, j})
+enum Cell { X = 'X', O = 'O', Empty = 'Empty' }
+
+enum Player { X = 'X', O = 'O' }
+
+type TicTacToeMove = {
+    player: Player,
+    board: Cell[][]
 }
 
-let i_temp = 0
-let j_temp = 0
-const hello = () => console.log("hello")
+const newGame = () => axios.get('http://localhost:8080/createtable').then(res => res.data);
+const makemove = (i: number, j: number) => axios.post(`http://localhost:8080/move/${i}/${j}`).then(res => res.data)
+
 
 const Board = () => {
+    const [move, setMove] = React.useState<TicTacToeMove | null>(null);
+   
     return <div>
-        <table style={{textAlign: "center"}}>
+
+        <button onClick={newGame}>New Game</button>
+        <table>
             <tbody>
             <tr>
                 <td>
-                    <button onClick={() => move(0, 0)}>+</button>
+                    <button onClick={() => makemove(0, 0).then(setMove)}>+</button>
 
                 </td>
                 <td>

@@ -1,8 +1,9 @@
 package com.example.ticTacToeSpring;
 
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
@@ -25,20 +26,30 @@ public class TicTacToeController {
         this.ticTacToeRepository = ticTacToeRepository;
     }
 
+    @GetMapping("/createtable")
+    public TicTacToeMove createNewGame() {
+        TicTacToeGame newtable = new TicTacToeGame();
+        var v = TicTacToeMove.fromTicTacToeTable(newtable.gameTable);
+        return ticTacToeRepository.save(new TicTacToeMove(newtable.currentPlayer, v));
+    }
 
-    @PostMapping("/createamove")
-    public TicTacToeMove makeAMove(@RequestParam int i, @RequestParam int j) {
+    @PostMapping("/createamove/{i}/{j}")
+    public TicTacToeMove makeAMove(@PathVariable Integer i, @PathVariable Integer j) {
+
 
         var oldMove = ticTacToeRepository.findTopByOrderByIdDesc();
-        TicTacToeGame tictactoegame = oldMove.isEmpty()
-                ? new TicTacToeGame()
-                : new TicTacToeGame(oldMove.get().currentPlayer, TicTacToeGame.fromTicTacToeString(oldMove.get().gameTable));
+        TicTacToeGame tictactoegame = new TicTacToeGame(oldMove.get().currentPlayer, TicTacToeGame.fromTicTacToeString(oldMove.get().gameTable));
+
+
+        if (!tictactoegame.isMoveValid(i, j)) throw new IllegalArgumentException("Move not valid");
+        if (tictactoegame.isGameOver()) throw new IllegalArgumentException("Game is over");
 
         tictactoegame.makeMove(i, j);
-
         TicTacToeMove tictactoetable = new TicTacToeMove(tictactoegame.currentPlayer, TicTacToeMove.fromTicTacToeTable(tictactoegame.gameTable));
 
-        return ticTacToeRepository.save(tictactoetable);
+        ticTacToeRepository.save(tictactoetable);
+        return tictactoetable;
+
     }
 
 }
@@ -92,13 +103,6 @@ class TicTacToeGame {
         currentPlayer = currentPlayer == Player.X ? Player.O : Player.X;
     }
 
-    public void printBoard() {
-        for (var row : gameTable) {
-            for (var cell : row)
-                System.out.print(cell == CellStatus.EMPTY ? "." : cell.toString());
-            System.out.println();
-        }
-    }
 
     public Optional<Player> getTheWinner() {
         // Rows
@@ -122,6 +126,14 @@ class TicTacToeGame {
 
     public boolean isDraw() {
         return Arrays.stream(gameTable).flatMap(Arrays::stream).allMatch(c -> c != CellStatus.EMPTY);
+    }
+
+    public boolean isGameOver() {
+        return getTheWinner().isPresent() || isDraw();
+    }
+
+    public boolean isMoveValid(int i, int j) {
+        return gameTable[i][j] == CellStatus.EMPTY;
     }
 
 }
