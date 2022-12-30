@@ -11,10 +11,7 @@
 #
 name: "CodeQL"
 
-on:
-  push:
-    branches-ignore:
-    -'main'
+on: push
     
 
 jobs:
